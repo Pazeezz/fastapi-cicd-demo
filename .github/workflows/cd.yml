@@ -13,10 +13,19 @@ jobs:
       contents: read
       packages: write
 
-    steps:
-      - uses: actions/checkout@v4
+    env:
+      BRANCH: ${{ github.event.workflow_run.head_branch }}
+      COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+      GHCR_REPO: ghcr.io/${{ github.repository }}
+      HUB_REPO: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fastapi-cicd-demo
 
-      # ---- GHCR ----
+    steps:
+      - name: Checkout the exact commit that CI tested
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.COMMIT_SHA }}
+
+      # ---- Log in to GHCR ----
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -24,45 +33,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Only generate tags for GHCR
-      - id: meta
+      # ---- Log in to Docker Hub ----
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Generate image metadata (tags & labels)
+        id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: |
+            ${{ env.GHCR_REPO }}
+            ${{ env.HUB_REPO }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ env.BRANCH == 'main' }}
             type=sha,format=short
 
-      - name: Build and push to GHCR
+      - name: Build and push to both registries
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      # ---- Docker Hub (optional; only if secrets exist) ----
-      - name: Log in to Docker Hub (optional)
-        if: ${{ github.secrets.DOCKERHUB_USERNAME && github.secrets.DOCKERHUB_TOKEN }}
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Re-tag GHCR image and push to Docker Hub (optional)
-        if: ${{ github.secrets.DOCKERHUB_USERNAME && github.secrets.DOCKERHUB_TOKEN }}
-        env:
-          GHCR_REPO: ghcr.io/${{ github.repository }}
-          HUB_REPO: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fastapi-cicd-demo
-          SHORT_SHA: ${{ github.sha }}
-        run: |
-          # pull what we just pushed to GHCR
-          docker pull "${GHCR_REPO}:latest"
-
-          # push 'latest' to Docker Hub
-          docker tag  "${GHCR_REPO}:latest" "${HUB_REPO}:latest"
-          docker push "${HUB_REPO}:latest"
-
-          # push short-sha tag to Docker Hub
-          docker tag  "${GHCR_REPO}:latest" "${HUB_REPO}:sha-${SHORT_SHA::7}"
-          docker push "${HUB_REPO}:sha-${SHORT_SHA::7}"
