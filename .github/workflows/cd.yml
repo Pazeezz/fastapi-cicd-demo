@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ----- GHCR -----
+      # ---- GHCR ----
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -24,19 +24,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Tag metadata for both registries
+      # Only generate tags for GHCR
       - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: |
-            ghcr.io/${{ github.repository }}
-            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fastapi-cicd-demo
+          images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,format=short
 
-      # Build once, push to GHCR (always)
-      - name: Build and push (GHCR)
+      - name: Build and push to GHCR
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -44,25 +41,28 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      # ----- Docker Hub (only if secrets exist) -----
-      - name: Log in to Docker Hub
-        if: ${{ github.secrets.DOCKERHUB_USERNAME != '' && github.secrets.DOCKERHUB_TOKEN != '' }}
+      # ---- Docker Hub (optional; only if secrets exist) ----
+      - name: Log in to Docker Hub (optional)
+        if: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Push to Docker Hub (re-tag and push)
-        if: ${{ github.secrets.DOCKERHUB_USERNAME != '' && github.secrets.DOCKERHUB_TOKEN != '' }}
+      - name: Re-tag GHCR image and push to Docker Hub (optional)
+        if: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
+        env:
+          GHCR_REPO: ghcr.io/${{ github.repository }}
+          HUB_REPO: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fastapi-cicd-demo
+          SHORT_SHA: ${{ github.sha }}
         run: |
-          # Tag from GHCR digest to Docker Hub names and push
-          DOCKERHUB_REPO="docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fastapi-cicd-demo"
-          GHCR_REPO="ghcr.io/${{ github.repository }}"
-          # latest
+          # pull what we just pushed to GHCR
           docker pull "${GHCR_REPO}:latest"
-          docker tag  "${GHCR_REPO}:latest" "${DOCKERHUB_REPO}:latest"
-          docker push "${DOCKERHUB_REPO}:latest"
-          # short sha tag
-          SHORT_SHA="${GITHUB_SHA::7}"
-          docker tag  "${GHCR_REPO}:latest" "${DOCKERHUB_REPO}:sha-${SHORT_SHA}"
-          docker push "${DOCKERHUB_REPO}:sha-${SHORT_SHA}"
+
+          # push 'latest' to Docker Hub
+          docker tag  "${GHCR_REPO}:latest" "${HUB_REPO}:latest"
+          docker push "${HUB_REPO}:latest"
+
+          # push short-sha tag to Docker Hub
+          docker tag  "${GHCR_REPO}:latest" "${HUB_REPO}:sha-${SHORT_SHA::7}"
+          docker push "${HUB_REPO}:sha-${SHORT_SHA::7}"
