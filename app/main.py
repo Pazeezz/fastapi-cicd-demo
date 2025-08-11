@@ -12,7 +12,8 @@ def root():
 
 @app.get("/greet")
 def greet(name: str | None = None):
-    return {"message": f"Hello, {name or 'SLIIT students'}!"}
+    # return {"message": f"Hello, {name or 'SLIIT students'}!"}
+    return {"message": f"🚀 Hello from CI/CD, {os.name}!"}
 
 @app.get("/favicon.ico")
 def favicon():
