@@ -8,7 +8,7 @@ GIT_SHA = os.getenv("GIT_SHA", "dev")
 
 @app.get("/")
 def root():
-    return {"message": "Hello, SLIIT students !"}
+    return {"message": "Hello, SLIIT students 2025 !"}
 
 @app.get("/greet")
 def greet(name: str | None = None):
