@@ -8,11 +8,11 @@ GIT_SHA = os.getenv("GIT_SHA", "dev")
 
 @app.get("/")
 def root():
-    return {"message": "Hello, UOK students 2025 !"}
+    return {"message": "Hello, Pydata UOK students !"}
 
 @app.get("/greet")
 def greet(name: str | None = None):
-    return {"message": f"Hello, {name or 'UOK students'}!"}
+    return {"message": f"Hello, {name or 'Pydata UOK students'}!"}
 
 @app.get("/favicon.ico")
 def favicon():
@@ -30,7 +30,7 @@ def ui(request: Request):
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>CI/CD Demo • UOK</title>
+  <title>CI/CD Demo • Pydata UOK</title>
   <style>
     :root {{
       --bg1:#0f172a; --bg2:#111827; --card:#0b1220cc; --ink:#e5e7eb; --muted:#9ca3af;
@@ -111,7 +111,7 @@ def ui(request: Request):
       <div class="head">
         <div class="logo">🚀</div>
         <div>
-          <h1>CI/CD Demo • UOK</h1>
+          <h1>CI/CD Demo • Pydata UOK</h1>
           <p class="lead">FastAPI + Docker + GitHub Actions + Cloud Deploy</p>
         </div>
       </div>
@@ -122,7 +122,7 @@ def ui(request: Request):
       </div>
 
       <div class="bar" id="bar"></div>
-      <div class="msg" id="msg">Hello, UOK students!</div>
+      <div class="msg" id="msg">Hello, Pydata UOK students !</div>
 
       <div class="chips">
         <span class="chip" id="lat">Latency: — ms</span>
