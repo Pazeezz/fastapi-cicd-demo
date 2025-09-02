@@ -231,7 +231,8 @@ OpenAPI JSON: http://localhost:8000/openapi.json
 
 **UI:**
 
-<img width="1510" height="745" alt="Screenshot 2025-08-15 at 22 25 17" src="https://github.com/user-attachments/assets/25cabf3d-f6d1-4a37-b2d3-a2ffc16ee3ad" />
+<img width="1512" height="754" alt="Screenshot 2025-09-02 at 17 34 51" src="https://github.com/user-attachments/assets/ae3d9fb3-87e7-4eec-8752-c3cd6c8c8eda" />
+
 
 ## ✅ Advantages of This Setup
 
